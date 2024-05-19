@@ -1,15 +1,4 @@
 import subprocess
-import atexit
-import sys
-
-botp = None
-
-
-
-
-
-
-
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll
 from textual.widgets import Input, Static, Header
@@ -17,10 +6,9 @@ from textual.worker import get_current_worker
 from textual import events
 import signal
 import os
+from time import sleep
 
-
-
-
+botp = None
 
 class XWUI(App):
     num = 0
@@ -45,7 +33,6 @@ class XWUI(App):
         pass
     
     def main_loop(self) -> None:
-        worker = get_current_worker()
         for line in self.run_bot():
             pass
         self.exit_bot()
@@ -58,12 +45,15 @@ class XWUI(App):
         if ret_code:
             self.print(f"Return code: {ret_code}\n")
         self.print("Bot ended.\n")
+        self.print("Ending in 10 seconds\n")
+        sleep(10)
+        self.exit()
 
     def on_key(self, event: events.Key) -> None:
-        if self.query_one(Input).value == "exit":
-            # botp.send_signal(signal.)
-            os.kill(botp.pid, signal.CTRL_C_EVENT)
-        self.query_one(Input).value = ""
+        if event.key == "enter":
+            if self.query_one(Input).value == "exit":
+                os.kill(botp.pid, signal.CTRL_C_EVENT)
+            self.query_one(Input).value = ""
         
     
     def run_bot(self):
@@ -78,7 +68,6 @@ class XWUI(App):
             pass
 
     def compose(self) -> ComposeResult:
-        yield Header()
         with VerticalScroll():
             yield Static(id="output")
         yield Input(placeholder="Enter commands here")
