@@ -7,6 +7,7 @@ from textual import events
 import signal
 import os
 from time import sleep
+import socket
 
 botp = None
 
@@ -15,6 +16,8 @@ class XWUI(App):
     text = None
     buffer = ""
     loop = None
+
+    clientSocket = None
 
     def print(self, string):
         self.buffer += string
@@ -27,6 +30,8 @@ class XWUI(App):
     def on_mount(self) -> None:
         self.text = self.query_one(Static)
         loop = self.run_worker(self.main_loop, thread=True, exclusive=True)
+        self.clientSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.clientSocket.settimeout(1.0)
         pass
 
     async def on_input_changed(self, message: Input.Changed) -> None:
@@ -44,6 +49,7 @@ class XWUI(App):
         ret_code = botp.wait()
         if ret_code:
             self.print(f"Return code: {ret_code}\n")
+        self.clientSocket.close()
         self.print("Bot ended.\n")
         self.print("Ending in 10 seconds\n")
         sleep(10)
@@ -51,8 +57,11 @@ class XWUI(App):
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "enter":
-            if self.query_one(Input).value == "exit":
+            inp = self.query_one(Input).value
+            if inp == "exit":
                 os.kill(botp.pid, signal.CTRL_C_EVENT)
+            elif inp == "ping":
+                self.clientSocket.sendto("ping".encode(), ("127.0.0.1", 5036))
             self.query_one(Input).value = ""
         
     
